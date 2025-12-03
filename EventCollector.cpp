@@ -57,7 +57,7 @@ void SendEvent(const SysEvent& e)
 
 bool CheckNewProcess(SysEvent& e);
 bool MonitorDirectory(SysEvent& e);
-// bool MonitorTCPConnections(SysEvent& e);
+// bool MonitorTCPConnections(SysEvent& e); // test sauu
 
 int main()
 {
