@@ -6,7 +6,6 @@
 
 std::set<std::wstring> g_knownProcesses;
 
-// Lấy process đang chạy
 void SnapshotProcesses(std::set<std::wstring>& out)
 {
     out.clear();
@@ -24,7 +23,6 @@ void SnapshotProcesses(std::set<std::wstring>& out)
     CloseHandle(snap);
 }
 
-// Kiểm tra process mới
 bool CheckNewProcess(SysEvent& eventOut)
 {
     std::set<std::wstring> current;
@@ -34,11 +32,10 @@ bool CheckNewProcess(SysEvent& eventOut)
     {
         if (!g_knownProcesses.count(p))
         {
-            // Process mới xuất hiện
             g_knownProcesses.insert(p);
 
             eventOut.type = "Process";
-            eventOut.time = "TODO";               // sẽ set time ở main
+            eventOut.time = "TODO";               
             eventOut.detail = std::string(p.begin(), p.end());
             return true;
         }

@@ -9,7 +9,6 @@
 #include <ws2tcpip.h>
 
 
-// ===================== TIME ==========================
 std::string Now()
 {
     SYSTEMTIME t;
@@ -20,7 +19,6 @@ std::string Now()
     return buf;
 }
 
-// ===================== SOCKET GLOBAL ==================
 SOCKET g_sock = INVALID_SOCKET;
 
 bool InitSocket()
@@ -57,12 +55,10 @@ void SendEvent(const SysEvent& e)
     send(g_sock, msg.c_str(), msg.size(), 0);
 }
 
-// =================== PROTOTYPES ===================
 bool CheckNewProcess(SysEvent& e);
 bool MonitorDirectory(SysEvent& e);
 // bool MonitorTCPConnections(SysEvent& e);
 
-// ======================= MAIN ======================
 int main()
 {
     if (!InitSocket())
@@ -75,7 +71,6 @@ int main()
 
     while (true)
     {
-        // ==== PROCESS EVENT ====
         {
             SysEvent ev;
             if (CheckNewProcess(ev))
@@ -87,7 +82,6 @@ int main()
             }
         }
 
-        // ==== FILE EVENT ====
         {
             SysEvent ev;
             if (MonitorDirectory(ev))
