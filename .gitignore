@@ -4,7 +4,7 @@
 *.user
 *.userosscache
 *.sln.docstates
-.vscode
+.vscode/
 # Build results
 x64/
 Debug/
