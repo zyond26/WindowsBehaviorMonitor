@@ -1,0 +1,25 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vscode
+# Build results
+x64/
+Debug/
+Release/
+*.obj
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.log
+*.tlog
+*.ipch
+*.db
+
+# Other
+*.cache
+*.vsidx
+*.VC.db
