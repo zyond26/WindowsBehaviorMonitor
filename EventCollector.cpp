@@ -8,6 +8,7 @@
 #include "EventStruct.h"
 #include <ws2tcpip.h>
 
+using namespace std;
 
 std::string Now()
 {
@@ -57,14 +58,14 @@ void SendEvent(const SysEvent& e)
 
 bool CheckNewProcess(SysEvent& e);
 bool MonitorDirectory(SysEvent& e);
-// bool MonitorTCPConnections(SysEvent& e); // test sauu
+bool MonitorTCPConnections(SysEvent& e); // test sauu
 
 int main()
 {
     if (!InitSocket())
     {
         std::cout << "Không thể kết nối GUI!\n";
-        return 0;
+       //  return 0;
     }
 
     std::cout << "=== EventCollector running ===\n";
@@ -92,6 +93,19 @@ int main()
                 std::cout << "[File] " << ev.detail << "\n";
             }
         }
+
+        //12/10 : Như thêm . 
+        {
+            SysEvent ev;
+            if (MonitorTCPConnections(ev)) 
+            {
+                ev.time = Now();
+                ev.type = "Network";
+                SendEvent(ev);
+                cout << "[Network] " << ev.detail << "\n";
+            }
+        }
+
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }

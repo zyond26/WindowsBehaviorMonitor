@@ -126,6 +126,7 @@
     <ClCompile Include="EventCollector.cpp" />
     <ClCompile Include="FileMonitor.cpp" />
     <ClCompile Include="KeyboardHook.cpp" />
+    <ClCompile Include="NetworkMonitor.cpp" />
     <ClCompile Include="ProcessMonitor.cpp" />
   </ItemGroup>
   <ItemGroup>
