@@ -22,4 +22,5 @@ Release/
 # Other
 *.cache
 *.vsidx
-*.VC.db_codeql_detected_source_root
+*.VC.db
+_codeql_detected_source_root
