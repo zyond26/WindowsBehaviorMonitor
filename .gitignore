@@ -1,0 +1,79 @@
+## ============================
+## Visual Studio / C / C++ .gitignore
+## ============================
+
+# Build folders
+Debug/
+Release/
+x64/
+x86/
+build/
+
+# Visual Studio cache
+.vs/
+*.user
+*.suo
+
+# IntelliSense
+*.ncb
+*.sdf
+*.cachefile
+*.VC.db
+.ipch/
+*.opendb
+*.VC.opendb
+
+# Project-specific temporary files
+*.obj
+*.pdb
+*.pch
+*.idb
+*.res
+*.ilk
+*.exp
+*.lib
+*.log
+*.tlog
+*.lastbuildstate
+*.tmp
+*.rsp
+*.map
+
+# Auto-generated files
+*.exe
+*.dll
+*.manifest
+
+# Visual Studio profiling
+*.psess
+*.vsp
+*.vspscc
+
+# NuGet packages
+packages/
+*.nupkg
+*.snupkg
+project.lock.json
+
+# Others
+*.db
+*.sqlite
+*.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+
+# Ignore compiled Python or scripts (just in case)
+__pycache__/
+*.pyc
+
+## ============================
+## END
+## ============================
