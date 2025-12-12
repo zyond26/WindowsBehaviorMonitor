@@ -115,10 +115,15 @@ std::wstring ProcessManager::ScanProcessMemory(DWORD pid)
 
     UniqueHandle process(rawProcess, &::CloseHandle);
 
-    MEMORY_BASIC_INFORMATION mbi{};
-    LPVOID address = nullptr;
+    SYSTEM_INFO sysInfo{};
+    ::GetSystemInfo(&sysInfo);
 
-    while (::VirtualQueryEx(process.get(), address, &mbi, sizeof(mbi)) == sizeof(mbi))
+    MEMORY_BASIC_INFORMATION mbi{};
+    LPVOID address = sysInfo.lpMinimumApplicationAddress;
+    LPVOID maxAddress = sysInfo.lpMaximumApplicationAddress;
+
+    while (address < maxAddress &&
+           ::VirtualQueryEx(process.get(), address, &mbi, sizeof(mbi)) == sizeof(mbi))
     {
         if (mbi.State == MEM_COMMIT &&
             mbi.Type == MEM_PRIVATE &&
@@ -131,7 +136,12 @@ std::wstring ProcessManager::ScanProcessMemory(DWORD pid)
             return warning.str();
         }
 
-        address = static_cast<LPBYTE>(mbi.BaseAddress) + mbi.RegionSize;
+        LPVOID nextAddress = static_cast<LPBYTE>(mbi.BaseAddress) + mbi.RegionSize;
+        if (nextAddress <= address)
+        {
+            break;
+        }
+        address = nextAddress;
     }
 
     return L"";
