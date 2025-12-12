@@ -2,6 +2,7 @@
 
 #include <TlHelp32.h>
 #include <memory>
+#include <sstream>
 #include <utility>
 
 namespace
@@ -102,4 +103,36 @@ bool ProcessManager::EnableSeDebugPrivilege()
     }
 
     return ::GetLastError() != ERROR_NOT_ALL_ASSIGNED;
+}
+
+std::wstring ProcessManager::ScanProcessMemory(DWORD pid)
+{
+    HANDLE rawProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+    if (!rawProcess)
+    {
+        return L"";
+    }
+
+    UniqueHandle process(rawProcess, &::CloseHandle);
+
+    MEMORY_BASIC_INFORMATION mbi{};
+    LPVOID address = nullptr;
+
+    while (::VirtualQueryEx(process.get(), address, &mbi, sizeof(mbi)) == sizeof(mbi))
+    {
+        if (mbi.State == MEM_COMMIT &&
+            mbi.Type == MEM_PRIVATE &&
+            mbi.Protect == PAGE_EXECUTE_READWRITE)
+        {
+            std::wostringstream warning;
+            warning << L"Suspicious memory region detected: BaseAddress=0x"
+                    << std::hex << reinterpret_cast<ULONG_PTR>(mbi.BaseAddress)
+                    << L", RegionSize=0x" << mbi.RegionSize;
+            return warning.str();
+        }
+
+        address = static_cast<LPBYTE>(mbi.BaseAddress) + mbi.RegionSize;
+    }
+
+    return L"";
 }

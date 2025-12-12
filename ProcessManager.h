@@ -21,6 +21,8 @@ public:
 
     static bool EnableSeDebugPrivilege();
 
+    std::wstring ScanProcessMemory(DWORD pid);
+
 private:
     ULONGLONG GetProcessCreationTime(DWORD pid);
     ProcessMap processes_;
