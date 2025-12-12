@@ -74,3 +74,32 @@ ULONGLONG ProcessManager::GetProcessCreationTime(DWORD pid)
 
     return creationTime.QuadPart;
 }
+
+bool ProcessManager::EnableSeDebugPrivilege()
+{
+    HANDLE rawToken = nullptr;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &rawToken))
+    {
+        return false;
+    }
+
+    UniqueHandle token(rawToken, &::CloseHandle);
+
+    LUID luid{};
+    if (!::LookupPrivilegeValue(nullptr, SE_DEBUG_NAME, &luid))
+    {
+        return false;
+    }
+
+    TOKEN_PRIVILEGES tp{};
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    if (!::AdjustTokenPrivileges(token.get(), FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr))
+    {
+        return false;
+    }
+
+    return ::GetLastError() != ERROR_NOT_ALL_ASSIGNED;
+}
