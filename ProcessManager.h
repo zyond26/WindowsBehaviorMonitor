@@ -19,6 +19,8 @@ public:
 
     ProcessMap GetRunningProcesses();
 
+    static bool EnableSeDebugPrivilege();
+
 private:
     ULONGLONG GetProcessCreationTime(DWORD pid);
     ProcessMap processes_;
