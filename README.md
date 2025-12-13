@@ -1,4 +1,5 @@
 # WindowsBehaviorMonitor - A user-mode endpoint monitoring tool for Windows
+
 - Đây là một công cụ **giám sát hành vi hệ thống ở user-mode trên Windows**, được xây dựng như một dự án thực tập nhằm mô phỏng các thành phần cơ bản của một **EDR (Endpoint Detection & Response)**.
 
 Dự án tập trung vào việc **phát hiện sớm các hành vi bất thường** liên quan đến:
