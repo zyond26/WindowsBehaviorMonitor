@@ -16,19 +16,18 @@ Dự án tập trung vào việc **phát hiện sớm các hành vi bất thư�
 
 ## 🧩 Kiến trúc tổng thể
 
-WindowsBehaviorMonitor được chia thành 3 module chính, mỗi module do **một thực tập sinh phụ trách**:
-
+```text
 WindowsBehaviorMonitor
 │
 ├── PMM (Process & Memory Monitoring)
-│ └── Giám sát tiến trình và bộ nhớ
+│   └── Giám sát tiến trình và bộ nhớ
 │
 ├── PFM (Persistence & File-system Monitoring)
-│ └── Giám sát cơ chế bám trụ của malware
+│   └── Giám sát cơ chế bám trụ của malware
 │
-├── NMM (Network Monitoring Module)
-│ └── Giám sát kết nối mạng
-
+└── NMM (Network Monitoring Module)
+    └── Giám sát kết nối mạng
+```
 ## 👥 Phân công nhiệm vụ
 
 ### 🔹 Phùng Đức Anh – **PMM (Process & Memory Monitoring)**
