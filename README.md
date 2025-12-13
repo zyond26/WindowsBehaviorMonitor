@@ -16,6 +16,7 @@ Dự án tập trung vào việc **phát hiện sớm các hành vi bất thư�
 
 ## 🧩 Kiến trúc tổng thể
 
+WindowsBehaviorMonitor được chia thành 3 module chính, mỗi module do **một thực tập sinh phụ trách:
 ```text
 WindowsBehaviorMonitor
 │
