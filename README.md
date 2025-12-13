@@ -133,7 +133,8 @@ HKCU\Software\Microsoft\Windows\CurrentVersion\Run
 - Git / GitHub
 
 ## 📄 License
-Dự án phục vụ mục đích học tập và nghiên cứu nội bộ.
++) Dự án phục vụ mục đích học tập và nghiên cứu nội bộ.
++) Dự án mang tính nghiên cứu – học tập – đào tạo
 
 ## 👤 Nhóm thực hiện
 - Phùng Đức Anh – PMM
