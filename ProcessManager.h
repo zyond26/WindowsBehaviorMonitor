@@ -17,9 +17,13 @@ class ProcessManager
 public:
     using ProcessMap = std::map<DWORD, ProcessInfo>;
 
+    static bool EnableSeDebugPrivilege();
+
     ProcessMap GetRunningProcesses();
+    std::wstring ScanProcessMemory(DWORD pid);
 
 private:
     ULONGLONG GetProcessCreationTime(DWORD pid);
+    bool IsAllowlisted(const std::wstring& processName);
     ProcessMap processes_;
 };

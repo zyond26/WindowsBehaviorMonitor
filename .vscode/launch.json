@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "f:/VSCMCCS/WindowsBehaviorMonitor",
-      "program": "f:/VSCMCCS/WindowsBehaviorMonitor/build/Debug/outDebug",
+      "cwd": "f:/Github/WindowsBehaviorMonitor",
+      "program": "f:/Github/WindowsBehaviorMonitor/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
