@@ -22,6 +22,8 @@ public:
     ProcessMap GetRunningProcesses();
     std::wstring ScanProcessMemory(DWORD pid);
 
+    static bool EnableSeDebugPrivilege();
+
 private:
     ULONGLONG GetProcessCreationTime(DWORD pid);
     bool IsAllowlisted(const std::wstring& processName);
