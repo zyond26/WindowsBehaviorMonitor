@@ -7,6 +7,12 @@
 
 #include "ProcessManager.h"
 
+void ClearScreen()
+{
+    // Clear screen for Windows
+    system("cls");
+}
+
 void PrintHeader()
 {
     std::wcout << L"\n========================================\n";
@@ -21,6 +27,7 @@ void PrintMenu()
     std::wcout << L"  2. Scan process memory for suspicious regions\n";
     std::wcout << L"  3. Enable SeDebugPrivilege\n";
     std::wcout << L"  4. Scan all processes for suspicious memory\n";
+    std::wcout << L"  5. Test Memory Scanner (for MockMalwareSim)\n";
     std::wcout << L"  0. Exit\n\n";
     std::wcout << L"Select an option: ";
 }
@@ -137,6 +144,30 @@ void ScanAllProcesses(ProcessManager& manager)
     std::wcout << L"========================================\n";
 }
 
+void TestMemoryScannerUI(ProcessManager& manager)
+{
+    std::wcout << L"\n--- Test Memory Scanner ---\n\n";
+    std::wcout << L"Instructions:\n";
+    std::wcout << L"  1. Run MockMalwareSim.exe in another terminal\n";
+    std::wcout << L"  2. Note the PID displayed by MockMalwareSim\n";
+    std::wcout << L"  3. Enter that PID below\n\n";
+    
+    std::wcout << L"Enter MockMalwareSim PID: ";
+    
+    DWORD pid;
+    std::wcin >> pid;
+
+    if (std::wcin.fail())
+    {
+        std::wcin.clear();
+        std::wcin.ignore((std::numeric_limits<std::streamsize>::max)(), L'\n');
+        std::wcout << L"Invalid PID!\n";
+        return;
+    }
+
+    manager.TestMemoryScanner(pid);
+}
+
 int main()
 {
     ProcessManager manager;
@@ -156,9 +187,15 @@ int main()
         {
             std::wcin.clear();
             std::wcin.ignore((std::numeric_limits<std::streamsize>::max)(), L'\n');
-            std::wcout << L"\nInvalid input! Please enter a number.\n";
+            ClearScreen();
+            PrintHeader();
+            std::wcout << L"\nInvalid input! Please enter a number.\n\n";
             continue;
         }
+
+        // Clear screen before executing any option
+        ClearScreen();
+        PrintHeader();
 
         switch (choice)
         {
@@ -174,12 +211,16 @@ int main()
         case 4:
             ScanAllProcesses(manager);
             break;
+        case 5:
+            TestMemoryScannerUI(manager);
+            break;
         case 0:
+            ClearScreen();
             std::wcout << L"\nExiting Windows Behavior Monitor. Goodbye!\n";
             running = false;
             break;
         default:
-            std::wcout << L"\nInvalid option! Please select 0-4.\n";
+            std::wcout << L"\nInvalid option! Please select 0-5.\n";
             break;
         }
 
@@ -188,7 +229,8 @@ int main()
             std::wcout << L"\nPress Enter to continue...";
             std::wcin.ignore((std::numeric_limits<std::streamsize>::max)(), L'\n');
             std::wcin.get();
-            std::wcout << L"\n\n";
+            ClearScreen();
+            PrintHeader();
         }
     }
 

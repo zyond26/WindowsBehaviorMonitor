@@ -3,6 +3,7 @@
 #include <TlHelp32.h>
 #include <memory>
 #include <utility>
+#include <iostream>
 
 namespace
 {
@@ -191,3 +192,51 @@ std::wstring ProcessManager::ScanProcessMemory(DWORD pid)
 
     return warnings;
 }
+
+void ProcessManager::TestMemoryScanner(DWORD targetPID)
+{
+    std::wcout << L"\n========================================\n";
+    std::wcout << L"  Memory Scanner Test\n";
+    std::wcout << L"========================================\n\n";
+    
+    std::wcout << L"Target PID: " << targetPID << std::endl;
+    
+    // Get process info if available
+    const auto cached = processes_.find(targetPID);
+    if (cached != processes_.end())
+    {
+        std::wcout << L"Process Name: " << cached->second.processName << std::endl;
+    }
+    
+    std::wcout << L"\nScanning process memory...\n\n";
+    
+    // Call ScanProcessMemory
+    std::wstring detectionResult = ScanProcessMemory(targetPID);
+    
+    // Analyze results
+    if (detectionResult.empty())
+    {
+        std::wcout << L"TEST FAILED: No RWX regions detected!\n";
+        std::wcout << L"Possible reasons:\n";
+        std::wcout << L"  1. Process is allowlisted (browser, JIT application)\n";
+        std::wcout << L"  2. Process has no RWX memory regions\n";
+        std::wcout << L"  3. Insufficient permissions (try running as Administrator)\n";
+        std::wcout << L"  4. Target PID is invalid or process terminated\n";
+    }
+    else
+    {
+        std::wcout << L"TEST PASSED: RWX Injection Detected!\n\n";
+        std::wcout << L"Detection Details:\n";
+        std::wcout << detectionResult;
+        
+        std::wcout << L"\n========================================\n";
+        std::wcout << L"Verification Instructions:\n";
+        std::wcout << L"1. Compare the Base Address above with the address\n";
+        std::wcout << L"   shown in MockMalwareSim console.\n";
+        std::wcout << L"2. If they match, the scanner is working correctly!\n";
+        std::wcout << L"========================================\n";
+    }
+    
+    std::wcout << std::endl;
+}
+
