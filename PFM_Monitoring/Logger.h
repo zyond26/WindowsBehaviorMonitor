@@ -21,4 +21,3 @@ private:
     std::wstring logfile_;
     void Write(const std::wstring& level, const std::wstring& msg);
 };
-
