@@ -4,7 +4,7 @@
 
 #define RUN_SUBKEY L"Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
-static std::wstring ToWString(const std::wstring& s) { return s; }
+static std::wstring ToWString(const std::wstring & s) { return s; }
 
 RegistryMonitor::RegistryMonitor() {
     LONG r = RegOpenKeyExW(HKEY_CURRENT_USER, RUN_SUBKEY, 0, KEY_READ | KEY_NOTIFY, &runKey_);
@@ -109,7 +109,7 @@ void RegistryMonitor::Start() {
             break;
         }
 
-        DWORD wait = WaitForSingleObject(notifyEvent_, 500); 
+        DWORD wait = WaitForSingleObject(notifyEvent_, 500);
         if (wait == WAIT_OBJECT_0) {
             RegMap current = TakeSnapshot(HKEY_CURRENT_USER);
             CompareAndAlert(current);
