@@ -7,6 +7,7 @@
 #include <windows.h>
 #include "EventStruct.h"
 #include <ws2tcpip.h>
+#include <fstream> // thư viện ghi file
 
 using namespace std;
 
@@ -60,6 +61,34 @@ bool CheckNewProcess(SysEvent& e);
 bool MonitorDirectory(SysEvent& e);
 bool MonitorTCPConnections(SysEvent& e); // test sauu
 
+
+void GhiLog(string noiDung) {
+    
+    HANDLE hFile = CreateFileA("log_mang.txt", //đổi sau hFile
+        FILE_APPEND_DATA,
+        FILE_SHARE_READ, 
+        NULL, 
+        OPEN_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile != INVALID_HANDLE_VALUE) {
+
+        string data = noiDung + "\r\n"; 
+        DWORD bytesDaGhi = 0;          
+
+        WriteFile(
+            hFile,             
+            data.c_str(),      
+            (DWORD)data.length(),
+            &bytesDaGhi,      
+            NULL                
+        );
+
+        CloseHandle(hFile);
+    }
+}
+
 int main()
 {
     if (!InitSocket())
@@ -101,8 +130,16 @@ int main()
             {
                 ev.time = Now();
                 ev.type = "Network";
+                
+                
+                string thoiGian(ev.time.begin(), ev.time.end());
+
+                string noiDungLog = "[" + thoiGian + "] " + ev.detail;
+
                 SendEvent(ev);
                 cout << "[Network] " << ev.detail << "\n";
+
+                GhiLog(noiDungLog);
             }
         }
 
