@@ -17,7 +17,7 @@ BOOL WINAPI ConsoleHandler(DWORD dwCtrlType) {
 }
 
 int wmain() {
-    Logger::Instance().SetLogFile(L"logs/pfm_registry.log");
+    Logger::Instance().SetLogFile(L"logs/registry.log");
     Logger::Instance().Info(L"PFM Monitoring starting...");
 
     SetConsoleCtrlHandler(ConsoleHandler, TRUE);
@@ -50,3 +50,4 @@ int wmain() {
     Logger::Instance().Info(L"PFM Monitoring stopped. Goodbye.");
     return 0;
 }
+
