@@ -20,7 +20,7 @@ private:
     RegMap TakeSnapshot(HKEY rootKey);
     void CompareAndAlert(const RegMap& current);
 
-    HKEY runKey_ = nullptr;    
+    HKEY runKey_ = nullptr;
     RegMap baseline_;
     HANDLE notifyEvent_ = nullptr;
     std::atomic<bool> running_{ false };
