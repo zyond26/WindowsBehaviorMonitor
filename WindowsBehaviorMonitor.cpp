@@ -443,8 +443,77 @@ void HandlePMMModule()
             WaitForEnter();
             break;
         case 4:
-            ScanAllProcesses();
-            WaitForEnter();
+            ClearScreen();
+            PrintBanner();
+            std::wcout << L"\n";
+            SetColor(14);
+            std::wcout << L"  +----- Real-Time Process Memory Scanning -----------------------------+\n";
+            ResetColor();
+            std::wcout << L"\n";
+            SetColor(10);
+            std::wcout << L"  [OK] Starting continuous memory scan...\n";
+            SetColor(14);
+            std::wcout << L"  Press any key to stop scanning...\n\n";
+            ResetColor();
+            
+            {
+                std::atomic<bool> scanRunning(true);
+                std::thread scanThread([&scanRunning]() {
+                    while (scanRunning.load())
+                    {
+                        if (_kbhit()) {
+                            _getch();
+                            scanRunning.store(false);
+                            break;
+                        }
+                        
+                        const auto processes = g_processManager.GetRunningProcesses();
+                        int suspiciousCount = 0;
+                        
+                        for (const auto& pair : processes)
+                        {
+                            if (!scanRunning.load()) break;
+                            
+                            const auto& info = pair.second;
+                            std::wstring warnings = g_processManager.ScanProcessMemory(info.pid);
+                            
+                            if (!warnings.empty())
+                            {
+                                suspiciousCount++;
+                                SetColor(12);
+                                std::wcout << L"  [!] PID " << info.pid << L" (" << info.processName << L"):\n";
+                                std::wcout << L"  " << warnings << L"\n";
+                                ResetColor();
+                            }
+                        }
+                        
+                        if (scanRunning.load())
+                        {
+                            SetColor(8);
+                            std::wcout << L"  Scan completed. Suspicious: " << suspiciousCount 
+                                      << L" | Waiting 3 seconds...\n\n";
+                            ResetColor();
+                            
+                            for (int i = 0; i < 30 && scanRunning.load(); i++)
+                            {
+                                if (_kbhit()) {
+                                    _getch();
+                                    scanRunning.store(false);
+                                    break;
+                                }
+                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            }
+                        }
+                    }
+                });
+                
+                scanThread.join();
+                
+                SetColor(8);
+                std::wcout << L"\n  Returning to menu...\n";
+                ResetColor();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
             break;
         case 5:
             TestMemoryScanner();
@@ -497,35 +566,73 @@ void HandlePFMModule()
                 SetColor(14);
                 std::wcout << L"\n  [!] Monitoring is already running!\n";
                 ResetColor();
+                WaitForEnter();
             }
             else
             {
                 g_pfmRunning = true;
-                
-                // Initialize monitors
+
                 if (!g_registryMonitor) g_registryMonitor = new RegistryMonitor();
                 if (!g_startupMonitor) g_startupMonitor = new StartupMonitor();
-                
+
                 // Start in separate threads
                 g_regMonitorThread = new std::thread([&]() {
                     g_registryMonitor->Start();
-                });
-                
+                    });
+
                 g_startupMonitorThread = new std::thread([&]() {
                     g_startupMonitor->Start();
-                });
-                
+                    });
+
                 SetColor(10);
                 std::wcout << L"\n  [OK] PFM Monitoring started!\n";
                 std::wcout << L"  Monitoring:\n";
                 std::wcout << L"    - Registry: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\n";
                 std::wcout << L"    - Startup Folder: %APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\n";
-                std::wcout << L"\n  Check console output for alerts...\n";
+                SetColor(14);
+                std::wcout << L"\n  Press any key to stop monitoring...\n\n";
                 ResetColor();
+                
+                // Loop while monitoring - check for keyboard input
+                while (g_pfmRunning)
+                {
+                    if (_kbhit())
+                    {
+                        _getch(); // Clear the key press
+                        g_pfmRunning = false;
+                        break;
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                }
+                
+                // Signal threads to stop
+                Logger::Instance().Info(L"Shutdown requested, stopping PFM monitors...");
+                if (g_registryMonitor) g_registryMonitor->Stop();
+                if (g_startupMonitor) g_startupMonitor->Stop();
+
+                // Wait for threads to finish
+                if (g_regMonitorThread)
+                {
+                    g_regMonitorThread->join();
+                    delete g_regMonitorThread;
+                    g_regMonitorThread = nullptr;
+                }
+                if (g_startupMonitorThread)
+                {
+                    g_startupMonitorThread->join();
+                    delete g_startupMonitorThread;
+                    g_startupMonitorThread = nullptr;
+                }
+                
+                SetColor(10);
+                std::wcout << L"\n  [OK] PFM Monitoring stopped.\n";
+                std::wcout << L"  Returning to PFM menu...\n";
+                ResetColor();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+                ClearScreen();
             }
-            WaitForEnter();
             break;
-            
+
         case 2:
             ClearScreen();
             PrintBanner();

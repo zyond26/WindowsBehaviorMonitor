@@ -1,6 +1,7 @@
 ﻿#include "RegistryMonitor.h"
 #include "Logger.h"
 #include <iostream>
+#include <conio.h>
 
 #define RUN_SUBKEY L"Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
@@ -110,7 +111,7 @@ void RegistryMonitor::Start() {
         }
 
         DWORD wait = WaitForSingleObject(notifyEvent_, 500);
-        if (wait == WAIT_OBJECT_0) {
+        if (wait == WAIT_OBJECT_0 && running_.load()) {
             RegMap current = TakeSnapshot(HKEY_CURRENT_USER);
             CompareAndAlert(current);
             baseline_ = current;

@@ -2,6 +2,7 @@
 #include "Logger.h"
 #include <filesystem>
 #include <windows.h>
+#include <conio.h>
 
 StartupMonitor::StartupMonitor() {
     try {
