@@ -673,27 +673,62 @@ void HandlePFMModule()
             }
             WaitForEnter();
             break;
-            
+        //    
+        //case 0:
+        //    // Stop monitoring before exiting
+        //    if (g_pfmRunning)
+        //    {
+        //        g_pfmRunning = false;
+        //        if (g_registryMonitor) g_registryMonitor->Stop();
+        //        if (g_startupMonitor) g_startupMonitor->Stop();
+        //        if (g_regMonitorThread) {
+        //            g_regMonitorThread->join();
+        //            delete g_regMonitorThread;
+        //            g_regMonitorThread = nullptr;
+        //        }
+        //        if (g_startupMonitorThread) {
+        //            g_startupMonitorThread->join();
+        //            delete g_startupMonitorThread;
+        //            g_startupMonitorThread = nullptr;
+        //        }
+        //    }
+        //    inPFM = false;
+        //    break;
+
         case 0:
-            // Stop monitoring before exiting
+        {
             if (g_pfmRunning)
             {
                 g_pfmRunning = false;
-                if (g_registryMonitor) g_registryMonitor->Stop();
-                if (g_startupMonitor) g_startupMonitor->Stop();
-                if (g_regMonitorThread) {
-                    g_regMonitorThread->join();
+
+                if (g_registryMonitor)
+                    g_registryMonitor->Stop();
+
+                if (g_startupMonitor)
+                    g_startupMonitor->Stop();
+
+                if (g_regMonitorThread)
+                {
+                    if (g_regMonitorThread->joinable())
+                        g_regMonitorThread->join();
+
                     delete g_regMonitorThread;
                     g_regMonitorThread = nullptr;
                 }
-                if (g_startupMonitorThread) {
-                    g_startupMonitorThread->join();
+
+                if (g_startupMonitorThread)
+                {
+                    if (g_startupMonitorThread->joinable())
+                        g_startupMonitorThread->join();
+
                     delete g_startupMonitorThread;
                     g_startupMonitorThread = nullptr;
                 }
             }
+
             inPFM = false;
             break;
+        }
             
         default:
             ClearScreen();
@@ -1167,7 +1202,6 @@ int main()
             HandleNMMModule();
             break;
         case 0:
-            // Cleanup
             if (g_pfmRunning)
             {
                 g_pfmRunning = false;
