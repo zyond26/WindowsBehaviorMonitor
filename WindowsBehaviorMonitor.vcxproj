@@ -102,10 +102,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)PMM;$(ProjectDir)PFM;$(ProjectDir)NMM;$(ProjectDir)Common</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>iphlpapi.lib;ws2_32.lib;advapi32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -123,11 +127,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ProcessManager.cpp" />
+    <ClCompile Include="Common\Logger.cpp" />
+    <ClCompile Include="NMM\FileMonitor.cpp" />
+    <ClCompile Include="NMM\NetworkMonitor.cpp" />
+    <ClCompile Include="NMM\ProcessMonitor.cpp" />
+    <ClCompile Include="PFM\RegistryMonitor.cpp" />
+    <ClCompile Include="PFM\StartupMonitor.cpp" />
+    <ClCompile Include="PMM\ProcessManager.cpp" />
     <ClCompile Include="WindowsBehaviorMonitor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ProcessManager.h" />
+    <ClInclude Include="Common\EventStruct.h" />
+    <ClInclude Include="Common\Logger.h" />
+    <ClInclude Include="NMM\FileMonitor.h" />
+    <ClInclude Include="NMM\NetworkMonitor.h" />
+    <ClInclude Include="NMM\ProcessMonitor.h" />
+    <ClInclude Include="PFM\RegistryMonitor.h" />
+    <ClInclude Include="PFM\StartupMonitor.h" />
+    <ClInclude Include="PMM\ProcessManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

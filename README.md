@@ -1,12 +1,19 @@
 # WindowsBehaviorMonitor 
-- a user-mode endpoint monitoring tool for Windows
+**A user-mode endpoint monitoring tool for Windows**
 
-- Đây là một công cụ **giám sát hành vi hệ thống ở user-mode trên Windows**, được xây dựng như một dự án thực tập nhằm mô phỏng các thành phần cơ bản của một **EDR (Endpoint Detection & Response)**.
+Đây là một công cụ **giám sát hành vi hệ thống ở user-mode trên Windows**, được xây dựng như một dự án thực tập nhằm mô phỏng các thành phần cơ bản của một **EDR (Endpoint Detection & Response)**.
+
+## ✨ Tính năng mới (v1.0)
+- ✅ **Giao diện Terminal đẹp** với ASCII art và màu sắc
+- ✅ **Real-time Monitoring** với multi-threading
+- ✅ **Menu phân cấp** dễ sử dụng
+- ✅ **Status Bar** hiển thị trạng thái các module
+- ✅ **Code được tổ chức** theo module rõ ràng
 
 Dự án tập trung vào việc **phát hiện sớm các hành vi bất thường** liên quan đến:
-- Giám sát Tiến trình và bộ nhớ - PMM (Process & Memory Monitoring)
-- Giám sát Cơ chế bám trụ của malware - PFM (Persistence & File-system Monitoring)
-- Giám sát kết nối mạng - NMM (Network Monitoring Module)
+- 🔍 **PMM** - Process & Memory Monitoring
+- 📁 **PFM** - Persistence & File-system Monitoring  
+- 🌐 **NMM** - Network Monitoring Module
 
 ## 🎯 Mục tiêu dự án
 
@@ -17,19 +24,35 @@ Dự án tập trung vào việc **phát hiện sớm các hành vi bất thư�
 
 ## 🧩 Kiến trúc tổng thể
 
-WindowsBehaviorMonitor được chia thành 3 module chính, mỗi module do **một thực tập sinh phụ trách:
+WindowsBehaviorMonitor được tổ chức thành cấu trúc module rõ ràng:
+
 ```text
-WindowsBehaviorMonitor
+WindowsBehaviorMonitor/
 │
-├── PMM (Process & Memory Monitoring)
-│   └── Giám sát tiến trình và bộ nhớ
+├── WindowsBehaviorMonitor.cpp    # Main program với giao diện menu đẹp
 │
-├── PFM (Persistence & File-system Monitoring)
-│   └── Giám sát cơ chế bám trụ của malware
+├── PMM/                           # Process & Memory Monitoring
+│   ├── ProcessManager.h
+│   └── ProcessManager.cpp
 │
-└── NMM (Network Monitoring Module)
-    └── Giám sát kết nối mạng
+├── PFM/                           # Persistence & File-system Monitoring
+│   ├── RegistryMonitor.h/.cpp
+│   └── StartupMonitor.h/.cpp
+│
+├── NMM/                           # Network Monitoring Module
+│   ├── NetworkMonitor.h
+│   └── NetworkMonitor.cpp
+│
+└── Common/                        # Shared utilities
+    ├── Logger.h/.cpp
+    └── EventStruct.h
 ```
+
+### 🎨 Giao diện Terminal
+- ✨ ASCII Art Banner đẹp mắt
+- 🎨 Màu sắc phân biệt từng module
+- 📊 Status bar real-time
+- 📋 Menu phân cấp trực quan
 ## 👥 Phân công nhiệm vụ
 
 ### 🔹 Phùng Đức Anh – **PMM (Process & Memory Monitoring)**
@@ -128,10 +151,36 @@ HKCU\Software\Microsoft\Windows\CurrentVersion\Run
 
 ## 🛠 Công nghệ sử dụng
 
-- C++17
-- Windows API
-- Visual Studio 2022
-- Git / GitHub
+- **C++17** với Modern C++ features
+- **Windows API** (Process, Registry, Network, Threading)
+- **Multi-threading** (std::thread, std::atomic)
+- **Visual Studio 2022**
+- **Git / GitHub**
+
+## 🚀 Cách chạy
+
+### Build từ Visual Studio
+1. Mở `WindowsBehaviorMonitor.sln` trong Visual Studio 2022
+2. Build Solution (Ctrl+Shift+B)
+3. Run (F5) hoặc Run without debugging (Ctrl+F5)
+
+### Build từ Command Line
+```powershell
+msbuild WindowsBehaviorMonitor.sln /p:Configuration=Debug /p:Platform=x64
+.\x64\Debug\WindowsBehaviorMonitor.exe
+```
+
+### Sử dụng
+Chương trình sẽ hiển thị menu:
+- **[1] PMM** - Giám sát process và memory
+- **[2] PFM** - Giám sát Registry và Startup folder
+- **[3] NMM** - Giám sát kết nối TCP
+- **[0]** Thoát
+
+Mỗi module có sub-menu riêng với các chức năng chi tiết.
+
+## 📚 Documentation
+- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Chi tiết về cấu trúc code và cách module hoạt động
 
 ## 📄 License
 +) Dự án phục vụ mục đích học tập và nghiên cứu nội bộ.
