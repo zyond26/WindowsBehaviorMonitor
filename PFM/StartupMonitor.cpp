@@ -53,7 +53,7 @@ void StartupMonitor::Start() {
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         nullptr,
         OPEN_EXISTING,
-        FILE_FLAG_BACKUP_SEMANTICS,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
         nullptr);
 
     if (hDir == INVALID_HANDLE_VALUE) {
@@ -125,8 +125,6 @@ void StartupMonitor::Start() {
 
     CloseHandle(hEvent);
     CloseHandle(hDir);
-
-    Logger::Instance().Info(L"StartupMonitor: Stopped.");
 }
 
 void StartupMonitor::Stop() {

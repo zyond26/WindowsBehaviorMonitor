@@ -85,8 +85,6 @@ void RegistryMonitor::CompareAndAlert(const RegMap& current) {
 
 void RegistryMonitor::Start() {
     if (!runKey_) {
-        baseline_ = TakeSnapshot(HKEY_CURRENT_USER);
-        PrintBaseline();
         Logger::Instance().Warn(L"RegistryMonitor: Monitoring disabled (runKey handle not available).");
         return;
     }
@@ -109,15 +107,15 @@ void RegistryMonitor::Start() {
             break;
         }
 
-        DWORD wait = WaitForSingleObject(notifyEvent_, 500);
-        if (wait == WAIT_OBJECT_0) {
+        DWORD wait = WaitForSingleObject(notifyEvent_, 200);
+
+        if (wait == WAIT_OBJECT_0)
+        {
             RegMap current = TakeSnapshot(HKEY_CURRENT_USER);
             CompareAndAlert(current);
             baseline_ = current;
         }
     }
-
-    Logger::Instance().Info(L"RegistryMonitor: Stopped.");
 }
 
 void RegistryMonitor::Stop() {
