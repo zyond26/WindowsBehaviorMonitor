@@ -13,7 +13,6 @@
 #include <fcntl.h>
 #include <conio.h>
 
-// Module includes
 #include "PMM/ProcessManager.h"
 #include "PFM/RegistryMonitor.h"
 #include "PFM/StartupMonitor.h"
@@ -622,8 +621,6 @@ void HandlePFMModule()
             inPFM = false;
             break;
         }
-
-
             
         default:
             ClearScreen();
