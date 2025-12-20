@@ -673,28 +673,7 @@ void HandlePFMModule()
             }
             WaitForEnter();
             break;
-        //    
-        //case 0:
-        //    // Stop monitoring before exiting
-        //    if (g_pfmRunning)
-        //    {
-        //        g_pfmRunning = false;
-        //        if (g_registryMonitor) g_registryMonitor->Stop();
-        //        if (g_startupMonitor) g_startupMonitor->Stop();
-        //        if (g_regMonitorThread) {
-        //            g_regMonitorThread->join();
-        //            delete g_regMonitorThread;
-        //            g_regMonitorThread = nullptr;
-        //        }
-        //        if (g_startupMonitorThread) {
-        //            g_startupMonitorThread->join();
-        //            delete g_startupMonitorThread;
-        //            g_startupMonitorThread = nullptr;
-        //        }
-        //    }
-        //    inPFM = false;
-        //    break;
-
+    
         case 0:
         {
             if (g_pfmRunning)
