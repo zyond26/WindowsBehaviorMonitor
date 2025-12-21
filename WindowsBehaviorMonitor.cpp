@@ -8,6 +8,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <fstream>
 #include <windows.h>
 #include <io.h>
 #include <fcntl.h>
@@ -70,7 +71,7 @@ void PrintMainMenu()
     std::wcout << L"  |                         MAIN MENU                                    |\n";
     std::wcout << L"  ========================================================================\n";
     ResetColor();
-    
+
     std::wcout << L"\n";
     SetColor(14); // Yellow
     std::wcout << L"  [ MODULE SELECTION ]\n";
@@ -99,19 +100,20 @@ void PrintPMMMenu()
 {
     ClearScreen();
     PrintBanner();
-    
+
     SetColor(13); // Magenta
     std::wcout << L"  ========================================================================\n";
     std::wcout << L"  |         PMM - Process & Memory Monitoring Module                   |\n";
     std::wcout << L"  ========================================================================\n";
     ResetColor();
-    
+
     std::wcout << L"\n";
     std::wcout << L"    [1] List All Running Processes\n";
     std::wcout << L"    [2] Scan Single Process Memory\n";
     std::wcout << L"    [3] Enable SeDebugPrivilege (Administrator)\n";
-    std::wcout << L"    [4] Scan All Processes for Suspicious Memory\n";
+    std::wcout << L"    [4] Scan All Processes\n";
     std::wcout << L"    [5] Test Memory Scanner (MockMalwareSim)\n";
+    std::wcout << L"    [6] Scan All Processes (Basic Mode)\n";
     std::wcout << L"\n";
     SetColor(12); // Red
     std::wcout << L"    [0] Back to Main Menu\n";
@@ -127,13 +129,13 @@ void PrintPFMMenu()
 {
     ClearScreen();
     PrintBanner();
-    
+
     SetColor(10); // Green
     std::wcout << L"  ========================================================================\n";
     std::wcout << L"  |      PFM - Persistence & File-system Monitoring Module            |\n";
     std::wcout << L"  ========================================================================\n";
     ResetColor();
-    
+
     std::wcout << L"\n";
     std::wcout << L"    [1] Start Registry & Startup Monitoring (Real-time)\n";
     std::wcout << L"    [2] Show Registry Baseline (HKCU\\Run)\n";
@@ -153,13 +155,13 @@ void PrintNMMMenu()
 {
     ClearScreen();
     PrintBanner();
-    
+
     SetColor(14); // Yellow
     std::wcout << L"  ========================================================================\n";
     std::wcout << L"  |            NMM - Network & System Monitoring Module                |\n";
     std::wcout << L"  ========================================================================\n";
     ResetColor();
-    
+
     std::wcout << L"\n";
     std::wcout << L"    [1] Start Network Monitoring (TCP Connections)\n";
     std::wcout << L"    [2] Start File System Monitoring (C:\\TestWatch)\n";
@@ -184,7 +186,7 @@ void PrintStatusBar()
     SetColor(8); // Gray
     std::wcout << L"------------------------------------------------------------------------\n";
     std::wcout << L"  Status: ";
-    
+
     if (g_pmmRunning) {
         SetColor(10); std::wcout << L"PMM:ON "; ResetColor();
     }
@@ -197,7 +199,7 @@ void PrintStatusBar()
     if (!g_pmmRunning && !g_pfmRunning && !g_nmmRunning) {
         SetColor(8); std::wcout << L"All modules idle"; ResetColor();
     }
-    
+
     std::wcout << L"\n";
     SetColor(8);
     std::wcout << L"  ------------------------------------------------------------------------\n";
@@ -214,19 +216,44 @@ void WaitForEnter()
     std::wcin.get();
 }
 
+// Helper function to write suspicious findings to separate log file
+void LogSuspiciousFindings(const std::wstring& processName, DWORD pid, const std::wstring& details)
+{
+    std::wofstream logFile("suspicious_findings.log", std::ios::app);
+    if (logFile.is_open())
+    {
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+
+        wchar_t timeStr[64];
+        swprintf_s(timeStr, L"[%02d:%02d:%02d]", st.wHour, st.wMinute, st.wSecond);
+
+        logFile << L"\n========================================\n";
+        logFile << timeStr << L" SUSPICIOUS PROCESS DETECTED\n";
+        logFile << L"========================================\n";
+        logFile << L"Process: " << processName << L"\n";
+        logFile << L"PID: " << pid << L"\n";
+        logFile << L"\nMemory Analysis:\n";
+        logFile << details;
+        logFile << L"========================================\n";
+        logFile.flush();
+        logFile.close();
+    }
+}
+
 // ========== PMM Module Functions ==========
 
 void ListAllProcesses()
 {
     ClearScreen();
     PrintBanner();
-    
+
     std::wcout << L"\n";
-    SetColor(14); // Yellow
+    SetColor(14);
     std::wcout << L"  +----- Running Processes ---------------------------------------------+\n";
     ResetColor();
     std::wcout << L"\n";
-    
+
     const auto processes = g_processManager.GetRunningProcesses();
 
     constexpr int kPidWidth = 8;
@@ -234,10 +261,10 @@ void ListAllProcesses()
     constexpr int kCreationWidth = 24;
 
     std::wcout << L"  " << std::left
-               << std::setw(kPidWidth) << L"PID"
-               << std::setw(kParentPidWidth) << L"ParentPID"
-               << std::setw(kCreationWidth) << L"CreationTimeTicks"
-               << L"ProcessName" << std::endl;
+        << std::setw(kPidWidth) << L"PID"
+        << std::setw(kParentPidWidth) << L"ParentPID"
+        << std::setw(kCreationWidth) << L"CreationTimeTicks"
+        << L"ProcessName" << std::endl;
     std::wcout << L"  " << std::wstring(75, L'-') << std::endl;
 
     for (const auto& pair : processes)
@@ -264,13 +291,13 @@ void ScanSingleProcess()
 {
     ClearScreen();
     PrintBanner();
-    
+
     std::wcout << L"\n";
     SetColor(14);
     std::wcout << L"  +----- Scan Process Memory -------------------------------------------+\n";
     ResetColor();
     std::wcout << L"\n  Enter Process ID (PID): ";
-    
+
     DWORD pid;
     std::wcin >> pid;
 
@@ -285,9 +312,9 @@ void ScanSingleProcess()
     }
 
     std::wcout << L"\n  Scanning process " << pid << L"...\n\n";
-    
+
     std::wstring warnings = g_processManager.ScanProcessMemory(pid);
-    
+
     if (warnings.empty())
     {
         SetColor(10);
@@ -307,13 +334,13 @@ void EnableDebugPrivilege()
 {
     ClearScreen();
     PrintBanner();
-    
+
     std::wcout << L"\n";
     SetColor(14);
     std::wcout << L"  +----- Enable SeDebugPrivilege ---------------------------------------+\n";
     ResetColor();
     std::wcout << L"\n";
-    
+
     if (ProcessManager::EnableSeDebugPrivilege())
     {
         SetColor(10);
@@ -330,60 +357,11 @@ void EnableDebugPrivilege()
     }
 }
 
-void ScanAllProcesses()
-{
-    ClearScreen();
-    PrintBanner();
-    
-    std::wcout << L"\n";
-    SetColor(14);
-    std::wcout << L"  +----- Scan All Processes --------------------------------------------+\n";
-    ResetColor();
-    std::wcout << L"\n  Scanning all running processes...\n\n";
-
-    const auto processes = g_processManager.GetRunningProcesses();
-    int suspiciousCount = 0;
-    int scannedCount = 0;
-
-    for (const auto& pair : processes)
-    {
-        const auto& info = pair.second;
-        std::wstring warnings = g_processManager.ScanProcessMemory(info.pid);
-        
-        if (!warnings.empty())
-        {
-            suspiciousCount++;
-            SetColor(12);
-            std::wcout << L"\n  [!] Process: " << info.processName 
-                       << L" (PID: " << info.pid << L")\n";
-            ResetColor();
-            std::wcout << L"  " << warnings;
-        }
-        scannedCount++;
-    }
-
-    std::wcout << L"\n";
-    std::wcout << L"  ===================================================================\n";
-    SetColor(14);
-    std::wcout << L"  Scan Summary:\n";
-    ResetColor();
-    std::wcout << L"    - Total processes scanned: " << scannedCount << std::endl;
-    if (suspiciousCount > 0) {
-        SetColor(12);
-        std::wcout << L"    - Suspicious processes found: " << suspiciousCount << std::endl;
-        ResetColor();
-    } else {
-        SetColor(10);
-        std::wcout << L"    - No suspicious processes found" << std::endl;
-        ResetColor();
-    }
-}
-
 void TestMemoryScanner()
 {
     ClearScreen();
     PrintBanner();
-    
+
     std::wcout << L"\n";
     SetColor(14);
     std::wcout << L"  +----- Test Memory Scanner -------------------------------------------+\n";
@@ -392,9 +370,9 @@ void TestMemoryScanner()
     std::wcout << L"    1. Run MockMalwareSim.exe in another terminal\n";
     std::wcout << L"    2. Note the PID displayed by MockMalwareSim\n";
     std::wcout << L"    3. Enter that PID below\n\n";
-    
+
     std::wcout << L"  Enter MockMalwareSim PID: ";
-    
+
     DWORD pid;
     std::wcin >> pid;
 
@@ -443,82 +421,166 @@ void HandlePMMModule()
             WaitForEnter();
             break;
         case 4:
+        {
             ClearScreen();
             PrintBanner();
             std::wcout << L"\n";
             SetColor(14);
-            std::wcout << L"  +----- Real-Time Process Memory Scanning -----------------------------+\n";
+            std::wcout << L"  +----- Continuous Process Monitoring (Enhanced) ----------------------+\n";
             ResetColor();
             std::wcout << L"\n";
-            SetColor(10);
-            std::wcout << L"  [OK] Starting continuous memory scan...\n";
-            SetColor(14);
-            std::wcout << L"  Press any key to stop scanning...\n\n";
-            ResetColor();
-            
+
+            // Clear old log file
+            std::wofstream clearLog("suspicious_findings.log", std::ios::trunc);
+            if (clearLog.is_open())
             {
-                std::atomic<bool> scanRunning(true);
-                std::thread scanThread([&scanRunning]() {
-                    while (scanRunning.load())
+                clearLog << L"===========================================\n";
+                clearLog << L"  SUSPICIOUS PROCESS FINDINGS LOG\n";
+                clearLog << L"===========================================\n";
+                clearLog.close();
+            }
+
+            SetColor(10);
+            std::wcout << L"  [*] Opening separate terminal for suspicious findings...\n";
+            ResetColor();
+
+            // Start PowerShell to tail the log file
+            STARTUPINFO si = { sizeof(si) };
+            PROCESS_INFORMATION pi;
+            wchar_t cmd[] = L"powershell.exe -NoExit -Command \"Write-Host 'SUSPICIOUS FINDINGS MONITOR' -ForegroundColor Red; Get-Content suspicious_findings.log -Wait\"";
+
+            if (CreateProcess(NULL, cmd, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
+            {
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+            SetColor(10);
+            std::wcout << L"  [OK] Starting continuous process monitoring...\n";
+            SetColor(14);
+            std::wcout << L"\n  Press 'Q' to stop monitoring...\n\n";
+            ResetColor();
+
+            std::atomic<bool> monitorRunning(true);
+            std::thread monitorThread([&monitorRunning]() {
+                auto previousProcesses = g_processManager.GetRunningProcesses();
+
+                while (monitorRunning.load())
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                    auto currentProcesses = g_processManager.GetRunningProcesses();
+
+                    for (const auto& pair : currentProcesses)
                     {
-                        if (_kbhit()) {
-                            _getch();
-                            scanRunning.store(false);
-                            break;
-                        }
-                        
-                        const auto processes = g_processManager.GetRunningProcesses();
-                        int suspiciousCount = 0;
-                        
-                        for (const auto& pair : processes)
+                        if (!monitorRunning.load()) break;
+
+                        DWORD pid = pair.first;
+                        if (previousProcesses.find(pid) == previousProcesses.end())
                         {
-                            if (!scanRunning.load()) break;
-                            
-                            const auto& info = pair.second;
-                            std::wstring warnings = g_processManager.ScanProcessMemory(info.pid);
-                            
-                            if (!warnings.empty())
-                            {
-                                suspiciousCount++;
-                                SetColor(12);
-                                std::wcout << L"  [!] PID " << info.pid << L" (" << info.processName << L"):\n";
-                                std::wcout << L"  " << warnings << L"\n";
-                                ResetColor();
-                            }
-                        }
-                        
-                        if (scanRunning.load())
-                        {
-                            SetColor(8);
-                            std::wcout << L"  Scan completed. Suspicious: " << suspiciousCount 
-                                      << L" | Waiting 3 seconds...\n\n";
+                            SetColor(10);
+                            std::wcout << L"  [+] NEW: ";
                             ResetColor();
-                            
-                            for (int i = 0; i < 30 && scanRunning.load(); i++)
+                            std::wcout << pair.second.processName << L" (PID: " << pid << L")\n";
+
+                            std::wstring scanResult = g_processManager.ScanProcessMemory(pid);
+                            if (!scanResult.empty())
                             {
-                                if (_kbhit()) {
-                                    _getch();
-                                    scanRunning.store(false);
-                                    break;
-                                }
-                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                                SetColor(12);
+                                std::wcout << L"      [!!!] SUSPICIOUS MEMORY DETECTED!\n";
+                                ResetColor();
+                                LogSuspiciousFindings(pair.second.processName, pid, scanResult);
                             }
                         }
                     }
+
+                    for (const auto& pair : previousProcesses)
+                    {
+                        if (!monitorRunning.load()) break;
+
+                        DWORD pid = pair.first;
+                        if (currentProcesses.find(pid) == currentProcesses.end())
+                        {
+                            SetColor(8);
+                            std::wcout << L"  [-] TERMINATED: ";
+                            ResetColor();
+                            std::wcout << pair.second.processName << L" (PID: " << pid << L")\n";
+                        }
+                    }
+
+                    previousProcesses = currentProcesses;
+                }
                 });
-                
-                scanThread.join();
-                
-                SetColor(8);
-                std::wcout << L"\n  Returning to menu...\n";
-                ResetColor();
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+            while (monitorRunning.load())
+            {
+                if (_kbhit())
+                {
+                    int key = _getch();
+                    if (key == 'q' || key == 'Q')
+                    {
+                        monitorRunning.store(false);
+                        break;
+                    }
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
-            break;
+
+            monitorThread.join();
+
+            SetColor(10);
+            std::wcout << L"\n  [OK] Monitoring stopped.\n";
+            ResetColor();
+            WaitForEnter();
+        }
+        break;
         case 5:
             TestMemoryScanner();
             WaitForEnter();
             break;
+        case 6:
+        {
+            ClearScreen();
+            PrintBanner();
+            std::wcout << L"\n";
+            SetColor(14);
+            std::wcout << L"  +----- Continuous Process Monitoring ---------------------------------+\n";
+            ResetColor();
+            std::wcout << L"\n";
+            SetColor(10);
+            std::wcout << L"  [OK] Starting continuous process monitoring...\n";
+            SetColor(14);
+            std::wcout << L"  Press 'Q' to stop monitoring...\n\n";
+            ResetColor();
+
+            std::atomic<bool> monitorRunning(true);
+            std::thread monitorThread([&monitorRunning]() {
+                g_processManager.StartContinuousMonitoring(monitorRunning);
+                });
+
+            while (monitorRunning.load())
+            {
+                if (_kbhit())
+                {
+                    int key = _getch();
+                    if (key == 'q' || key == 'Q')
+                    {
+                        monitorRunning.store(false);
+                        break;
+                    }
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
+            monitorThread.join();
+
+            SetColor(10);
+            std::wcout << L"\n  [OK] Monitoring stopped.\n";
+            ResetColor();
+            WaitForEnter();
+        }
+        break;
         case 0:
             inPMM = false;
             break;
@@ -559,6 +621,7 @@ void HandlePFMModule()
         switch (choice)
         {
         case 1:
+        {
             ClearScreen();
             PrintBanner();
             if (g_pfmRunning)
@@ -575,7 +638,6 @@ void HandlePFMModule()
                 if (!g_registryMonitor) g_registryMonitor = new RegistryMonitor();
                 if (!g_startupMonitor) g_startupMonitor = new StartupMonitor();
 
-                // Start in separate threads
                 g_regMonitorThread = new std::thread([&]() {
                     g_registryMonitor->Start();
                     });
@@ -588,29 +650,25 @@ void HandlePFMModule()
                 std::wcout << L"\n  [OK] PFM Monitoring started!\n";
                 std::wcout << L"  Monitoring:\n";
                 std::wcout << L"    - Registry: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\n";
-                std::wcout << L"    - Startup Folder: %APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\n";
+                std::wcout << L"    - Startup Folder\n";
                 SetColor(14);
                 std::wcout << L"\n  Press any key to stop monitoring...\n\n";
                 ResetColor();
-                
-                // Loop while monitoring - check for keyboard input
+
                 while (g_pfmRunning)
                 {
                     if (_kbhit())
                     {
-                        _getch(); // Clear the key press
+                        _getch();
                         g_pfmRunning = false;
                         break;
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 }
-                
-                // Signal threads to stop
-                Logger::Instance().Info(L"Shutdown requested, stopping PFM monitors...");
+
                 if (g_registryMonitor) g_registryMonitor->Stop();
                 if (g_startupMonitor) g_startupMonitor->Stop();
 
-                // Wait for threads to finish
                 if (g_regMonitorThread)
                 {
                     g_regMonitorThread->join();
@@ -623,17 +681,17 @@ void HandlePFMModule()
                     delete g_startupMonitorThread;
                     g_startupMonitorThread = nullptr;
                 }
-                
+
                 SetColor(10);
                 std::wcout << L"\n  [OK] PFM Monitoring stopped.\n";
-                std::wcout << L"  Returning to PFM menu...\n";
                 ResetColor();
                 std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-                ClearScreen();
             }
-            break;
+        }
+        break;
 
         case 2:
+        {
             ClearScreen();
             PrintBanner();
             std::wcout << L"\n";
@@ -645,70 +703,58 @@ void HandlePFMModule()
             g_registryMonitor->PrintBaseline();
             std::wcout << L"\n";
             WaitForEnter();
-            break;
-            
+        }
+        break;
+
         case 3:
-            {
-                ClearScreen();
-                PrintBanner();
-                std::wcout << L"\n";
-                SetColor(14);
-                std::wcout << L"  +----- Startup Folder Files ------------------------------------------+\n";
-                ResetColor();
-                std::wcout << L"\n";
-                if (!g_startupMonitor) g_startupMonitor = new StartupMonitor();
-                auto files = g_startupMonitor->ListStartupFiles();
-                if (files.empty())
-                {
-                    std::wcout << L"  (No files found)\n";
-                }
-                else
-                {
-                    for (const auto& file : files)
-                    {
-                        std::wcout << L"    - " << file << L"\n";
-                    }
-                }
-                std::wcout << L"\n";
-            }
-            WaitForEnter();
-            break;
-    
-        case 0:
         {
+            ClearScreen();
+            PrintBanner();
+            std::wcout << L"\n";
+            SetColor(14);
+            std::wcout << L"  +----- Startup Folder Files ------------------------------------------+\n";
+            ResetColor();
+            std::wcout << L"\n";
+            if (!g_startupMonitor) g_startupMonitor = new StartupMonitor();
+            auto files = g_startupMonitor->ListStartupFiles();
+            if (files.empty())
+            {
+                std::wcout << L"  (No files found)\n";
+            }
+            else
+            {
+                for (const auto& file : files)
+                {
+                    std::wcout << L"    - " << file << L"\n";
+                }
+            }
+            std::wcout << L"\n";
+            WaitForEnter();
+        }
+        break;
+
+        case 0:
             if (g_pfmRunning)
             {
                 g_pfmRunning = false;
-
-                if (g_registryMonitor)
-                    g_registryMonitor->Stop();
-
-                if (g_startupMonitor)
-                    g_startupMonitor->Stop();
-
-                if (g_regMonitorThread)
+                if (g_registryMonitor) g_registryMonitor->Stop();
+                if (g_startupMonitor) g_startupMonitor->Stop();
+                if (g_regMonitorThread && g_regMonitorThread->joinable())
                 {
-                    if (g_regMonitorThread->joinable())
-                        g_regMonitorThread->join();
-
+                    g_regMonitorThread->join();
                     delete g_regMonitorThread;
                     g_regMonitorThread = nullptr;
                 }
-
-                if (g_startupMonitorThread)
+                if (g_startupMonitorThread && g_startupMonitorThread->joinable())
                 {
-                    if (g_startupMonitorThread->joinable())
-                        g_startupMonitorThread->join();
-
+                    g_startupMonitorThread->join();
                     delete g_startupMonitorThread;
                     g_startupMonitorThread = nullptr;
                 }
             }
-
             inPFM = false;
             break;
-        }
-            
+
         default:
             ClearScreen();
             PrintBanner();
@@ -735,17 +781,16 @@ void NetworkMonitoringLoop()
     SetColor(14);
     std::wcout << L"  Press any key to stop monitoring...\n\n";
     ResetColor();
-    
+
     while (g_nmmRunning)
     {
-        // Check for keyboard input
         if (_kbhit())
         {
-            _getch(); // Clear the key press
+            _getch();
             g_nmmRunning = false;
             break;
         }
-        
+
         SysEvent event;
         if (MonitorTCPConnections(event))
         {
@@ -754,15 +799,14 @@ void NetworkMonitoringLoop()
             SetColor(11);
             std::wcout << L"New Connection: ";
             ResetColor();
-            
-            // Convert string to wstring for display
+
             std::wstring wDetail(event.detail.begin(), event.detail.end());
             std::wcout << wDetail << L"\n";
         }
-        
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
-    
+
     SetColor(10);
     std::wcout << L"\n  [OK] Network monitoring stopped.\n";
     ResetColor();
@@ -776,17 +820,16 @@ void FileMonitoringLoop()
     SetColor(14);
     std::wcout << L"  Press any key to stop monitoring...\n\n";
     ResetColor();
-    
+
     while (g_nmmRunning)
     {
-        // Check for keyboard input
         if (_kbhit())
         {
-            _getch(); // Clear the key press
+            _getch();
             g_nmmRunning = false;
             break;
         }
-        
+
         SysEvent event;
         if (MonitorDirectory(event))
         {
@@ -795,14 +838,14 @@ void FileMonitoringLoop()
             SetColor(11);
             std::wcout << L"File Change: ";
             ResetColor();
-            
+
             std::wstring wDetail(event.detail.begin(), event.detail.end());
             std::wcout << wDetail << L"\n";
         }
-        
+
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    
+
     SetColor(10);
     std::wcout << L"\n  [OK] File monitoring stopped.\n";
     ResetColor();
@@ -816,17 +859,16 @@ void ProcessMonitoringLoop()
     SetColor(14);
     std::wcout << L"  Press any key to stop monitoring...\n\n";
     ResetColor();
-    
+
     while (g_nmmRunning)
     {
-        // Check for keyboard input
         if (_kbhit())
         {
-            _getch(); // Clear the key press
+            _getch();
             g_nmmRunning = false;
             break;
         }
-        
+
         SysEvent event;
         if (CheckNewProcess(event))
         {
@@ -835,14 +877,14 @@ void ProcessMonitoringLoop()
             SetColor(11);
             std::wcout << L"New Process: ";
             ResetColor();
-            
+
             std::wstring wDetail(event.detail.begin(), event.detail.end());
             std::wcout << wDetail << L"\n";
         }
-        
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
-    
+
     SetColor(10);
     std::wcout << L"\n  [OK] Process monitoring stopped.\n";
     ResetColor();
@@ -867,7 +909,8 @@ void HandleNMMModule()
 
         switch (choice)
         {
-        case 1: // Start Network Monitoring
+        case 1:
+        {
             ClearScreen();
             PrintBanner();
             if (g_nmmRunning)
@@ -881,20 +924,20 @@ void HandleNMMModule()
             {
                 g_nmmRunning = true;
                 g_nmmNetworkThread = new std::thread(NetworkMonitoringLoop);
-                
-                // Wait for thread to finish (when user presses key)
                 g_nmmNetworkThread->join();
                 delete g_nmmNetworkThread;
                 g_nmmNetworkThread = nullptr;
-                
+
                 SetColor(8);
                 std::wcout << L"\n  Returning to menu...\n";
                 ResetColor();
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
-            break;
-            
-        case 2: // Start File Monitoring
+        }
+        break;
+
+        case 2:
+        {
             ClearScreen();
             PrintBanner();
             if (g_nmmRunning)
@@ -908,20 +951,20 @@ void HandleNMMModule()
             {
                 g_nmmRunning = true;
                 g_nmmFileThread = new std::thread(FileMonitoringLoop);
-                
-                // Wait for thread to finish (when user presses key)
                 g_nmmFileThread->join();
                 delete g_nmmFileThread;
                 g_nmmFileThread = nullptr;
-                
+
                 SetColor(8);
                 std::wcout << L"\n  Returning to menu...\n";
                 ResetColor();
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
-            break;
-            
-        case 3: // Start Process Monitoring
+        }
+        break;
+
+        case 3:
+        {
             ClearScreen();
             PrintBanner();
             if (g_nmmRunning)
@@ -935,20 +978,20 @@ void HandleNMMModule()
             {
                 g_nmmRunning = true;
                 g_nmmProcessThread = new std::thread(ProcessMonitoringLoop);
-                
-                // Wait for thread to finish (when user presses key)
                 g_nmmProcessThread->join();
                 delete g_nmmProcessThread;
                 g_nmmProcessThread = nullptr;
-                
+
                 SetColor(8);
                 std::wcout << L"\n  Returning to menu...\n";
                 ResetColor();
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
-            break;
-            
-        case 4: // Start All Monitoring
+        }
+        break;
+
+        case 4:
+        {
             ClearScreen();
             PrintBanner();
             if (g_nmmRunning)
@@ -966,41 +1009,22 @@ void HandleNMMModule()
                 g_nmmProcessThread = new std::thread(ProcessMonitoringLoop);
                 SetColor(10);
                 std::wcout << L"\n  [OK] All NMM monitors started!\n";
-                std::wcout << L"  - Network: Monitoring TCP connections\n";
-                std::wcout << L"  - File: Monitoring C:\\TestWatch\n";
-                std::wcout << L"  - Process: Monitoring new processes\n";
-                SetColor(14);
-                std::wcout << L"\n  Press any key to stop all monitoring...\n";
                 ResetColor();
-                
-                // Wait for threads to finish (when user presses key)
-                if (g_nmmNetworkThread) 
-                {
-                    g_nmmNetworkThread->join();
-                    delete g_nmmNetworkThread;
-                    g_nmmNetworkThread = nullptr;
-                }
-                if (g_nmmFileThread) 
-                {
-                    g_nmmFileThread->join();
-                    delete g_nmmFileThread;
-                    g_nmmFileThread = nullptr;
-                }
-                if (g_nmmProcessThread) 
-                {
-                    g_nmmProcessThread->join();
-                    delete g_nmmProcessThread;
-                    g_nmmProcessThread = nullptr;
-                }
-                
+
+                if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; g_nmmNetworkThread = nullptr; }
+                if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; g_nmmFileThread = nullptr; }
+                if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; g_nmmProcessThread = nullptr; }
+
                 SetColor(8);
                 std::wcout << L"\n  Returning to menu...\n";
                 ResetColor();
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
-            break;
-            
-        case 5: // Stop All Monitoring
+        }
+        break;
+
+        case 5:
+        {
             ClearScreen();
             PrintBanner();
             if (!g_nmmRunning)
@@ -1012,87 +1036,56 @@ void HandleNMMModule()
             else
             {
                 g_nmmRunning = false;
-                
-                if (g_nmmNetworkThread)
-                {
-                    g_nmmNetworkThread->join();
-                    delete g_nmmNetworkThread;
-                    g_nmmNetworkThread = nullptr;
-                }
-                
-                if (g_nmmFileThread)
-                {
-                    g_nmmFileThread->join();
-                    delete g_nmmFileThread;
-                    g_nmmFileThread = nullptr;
-                }
-                
-                if (g_nmmProcessThread)
-                {
-                    g_nmmProcessThread->join();
-                    delete g_nmmProcessThread;
-                    g_nmmProcessThread = nullptr;
-                }
-                
+
+                if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; g_nmmNetworkThread = nullptr; }
+                if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; g_nmmFileThread = nullptr; }
+                if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; g_nmmProcessThread = nullptr; }
+
                 SetColor(10);
                 std::wcout << L"\n  [OK] All monitoring stopped!\n";
                 ResetColor();
             }
             WaitForEnter();
-            break;
-            
-        case 6: // Display Current TCP Connections
+        }
+        break;
+
+        case 6:
+        {
+            ClearScreen();
+            PrintBanner();
+            std::wcout << L"\n";
+            SetColor(14);
+            std::wcout << L"  +----- Current TCP Connections ---------------------------------------+\n";
+            ResetColor();
+            std::wcout << L"\n";
+            std::wcout << L"  Scanning TCP table...\n\n";
+
+            for (int i = 0; i < 10; i++)
             {
-                ClearScreen();
-                PrintBanner();
-                std::wcout << L"\n";
-                SetColor(14);
-                std::wcout << L"  +----- Current TCP Connections ---------------------------------------+\n";
-                ResetColor();
-                std::wcout << L"\n";
-                std::wcout << L"  Scanning TCP table...\n\n";
-                
-                // Use MonitorTCPConnections to show existing connections
-                for (int i = 0; i < 10; i++)
+                SysEvent event;
+                if (MonitorTCPConnections(event))
                 {
-                    SysEvent event;
-                    if (MonitorTCPConnections(event))
-                    {
-                        std::wstring wDetail(event.detail.begin(), event.detail.end());
-                        std::wcout << L"    - " << wDetail << L"\n";
-                    }
+                    std::wstring wDetail(event.detail.begin(), event.detail.end());
+                    std::wcout << L"    - " << wDetail << L"\n";
                 }
-                
-                std::wcout << L"\n";
             }
+
+            std::wcout << L"\n";
             WaitForEnter();
-            break;
-            
-        case 0: // Back to Main Menu
-            // Stop monitoring before exiting
+        }
+        break;
+
+        case 0:
             if (g_nmmRunning)
             {
                 g_nmmRunning = false;
-                
-                if (g_nmmNetworkThread) {
-                    g_nmmNetworkThread->join();
-                    delete g_nmmNetworkThread;
-                    g_nmmNetworkThread = nullptr;
-                }
-                if (g_nmmFileThread) {
-                    g_nmmFileThread->join();
-                    delete g_nmmFileThread;
-                    g_nmmFileThread = nullptr;
-                }
-                if (g_nmmProcessThread) {
-                    g_nmmProcessThread->join();
-                    delete g_nmmProcessThread;
-                    g_nmmProcessThread = nullptr;
-                }
+                if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; g_nmmNetworkThread = nullptr; }
+                if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; g_nmmFileThread = nullptr; }
+                if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; g_nmmProcessThread = nullptr; }
             }
             inNMM = false;
             break;
-            
+
         default:
             ClearScreen();
             PrintBanner();
@@ -1109,14 +1102,12 @@ void HandleNMMModule()
 
 int main()
 {
-    // Enable Virtual Terminal Processing for better Unicode support
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dwMode = 0;
     GetConsoleMode(hOut, &dwMode);
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     SetConsoleMode(hOut, dwMode);
 
-    // Set console font to one that supports Unicode (Consolas)
     CONSOLE_FONT_INFOEX cfi = {};
     cfi.cbSize = sizeof(cfi);
     cfi.nFont = 0;
@@ -1126,19 +1117,17 @@ int main()
     cfi.FontWeight = FW_NORMAL;
     wcscpy_s(cfi.FaceName, L"Consolas");
     SetCurrentConsoleFontEx(hOut, FALSE, &cfi);
-    
-    // Set console to Unicode mode for wcout (UTF-16)
+
     _setmode(_fileno(stdout), _O_U16TEXT);
     _setmode(_fileno(stdin), _O_U16TEXT);
-    
-    // Initialize logger
+
     Logger::Instance().SetLogFile(L"WinBehaviorMonitor.log");
-    
+
     bool running = true;
     int choice;
 
     PrintBanner();
-    
+
     SetColor(14);
     std::wcout << L"  System Initialization...\n";
     ResetColor();
@@ -1150,7 +1139,7 @@ int main()
     SetColor(8);
     std::wcout << L"\n  Note: Some features require Administrator privileges.\n";
     ResetColor();
-    
+
     WaitForEnter();
 
     while (running)
@@ -1159,7 +1148,7 @@ int main()
         PrintBanner();
         PrintStatusBar();
         PrintMainMenu();
-        
+
         std::wcin >> choice;
 
         if (std::wcin.fail())
@@ -1189,7 +1178,7 @@ int main()
                 if (g_regMonitorThread) { g_regMonitorThread->join(); delete g_regMonitorThread; }
                 if (g_startupMonitorThread) { g_startupMonitorThread->join(); delete g_startupMonitorThread; }
             }
-            
+
             if (g_nmmRunning)
             {
                 g_nmmRunning = false;
@@ -1197,10 +1186,10 @@ int main()
                 if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; }
                 if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; }
             }
-            
+
             delete g_registryMonitor;
             delete g_startupMonitor;
-            
+
             ClearScreen();
             PrintBanner();
             SetColor(10);
@@ -1220,4 +1209,3 @@ int main()
 
     return 0;
 }
-

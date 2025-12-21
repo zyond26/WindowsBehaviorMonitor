@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <map>
 #include <string>
+#include <atomic>
 
 struct ProcessInfo
 {
@@ -22,6 +23,7 @@ public:
     ProcessMap GetRunningProcesses();
     std::wstring ScanProcessMemory(DWORD pid);
     void TestMemoryScanner(DWORD targetPID);
+    void StartContinuousMonitoring(std::atomic<bool>& running);
 
 private:
     ULONGLONG GetProcessCreationTime(DWORD pid);
