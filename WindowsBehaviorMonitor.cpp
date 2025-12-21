@@ -166,22 +166,14 @@ void PrintNMMMenu()
     std::wcout << L"    [1] Start Network Monitoring (TCP Connections)\n";
     std::wcout << L"    [2] Start File System Monitoring (C:\\TestWatch)\n";
     std::wcout << L"    [3] Start Process Monitoring (New Processes)\n";
-    std::wcout << L"    [4] Start All Monitoring (Network + File + Process)\n";
+    std::wcout << L"    [4] Integrated Monitoring\n";
+    ResetColor();
     std::wcout << L"    [5] Stop All Monitoring\n";
     std::wcout << L"    [6] Display Current TCP Connections\n";
     std::wcout << L"\n";
     SetColor(12); // Red
     std::wcout << L"    [0] Back to Main Menu\n";
     ResetColor();
-    std::wcout << L"\n";
-    std::wcout << L"  ------------------------------------------------------------------------\n";
-    SetColor(11); // Cyan
-    std::wcout << L"  >> Select option: ";
-    ResetColor();
-}
-
-void PrintStatusBar()
-{
     std::wcout << L"\n  ";
     SetColor(8); // Gray
     std::wcout << L"------------------------------------------------------------------------\n";
@@ -204,6 +196,25 @@ void PrintStatusBar()
     SetColor(8);
     std::wcout << L"  ------------------------------------------------------------------------\n";
     ResetColor();
+}
+void PrintStatusBar()
+{
+    SetColor(8); // Gray
+    std::wcout << L"  [Status] ";
+    if (g_pmmRunning) {
+        SetColor(10); std::wcout << L"PMM:ON "; ResetColor();
+    }
+    if (g_pfmRunning) {
+        SetColor(10); std::wcout << L"PFM:ON "; ResetColor();
+    }
+    if (g_nmmRunning) {
+        SetColor(10); std::wcout << L"NMM:ON "; ResetColor();
+    }
+    if (!g_pmmRunning && !g_pfmRunning && !g_nmmRunning) {
+        SetColor(8); std::wcout << L"All modules idle"; ResetColor();
+    }
+    ResetColor();
+    std::wcout << L"\n";
 }
 
 void WaitForEnter()
@@ -236,6 +247,25 @@ void LogSuspiciousFindings(const std::wstring& processName, DWORD pid, const std
         logFile << L"\nMemory Analysis:\n";
         logFile << details;
         logFile << L"========================================\n";
+        logFile.flush();
+        logFile.close();
+    }
+}
+
+// Helper function to log NMM events
+void LogNMMEvent(const std::string& eventType, const std::string& detail)
+{
+    std::ofstream logFile("nmm_events.log", std::ios::app);
+    if (logFile.is_open())
+    {
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        
+        char timeStr[64];
+        sprintf_s(timeStr, "[%04d-%02d-%02d %02d:%02d:%02d]", 
+                  st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+        
+        logFile << timeStr << " [" << eventType << "] " << detail << "\n";
         logFile.flush();
         logFile.close();
     }
@@ -455,7 +485,7 @@ void HandlePMMModule()
                 CloseHandle(pi.hThread);
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             SetColor(10);
             std::wcout << L"  [OK] Starting continuous process monitoring...\n";
@@ -1003,22 +1033,136 @@ void HandleNMMModule()
             }
             else
             {
-                g_nmmRunning = true;
-                g_nmmNetworkThread = new std::thread(NetworkMonitoringLoop);
-                g_nmmFileThread = new std::thread(FileMonitoringLoop);
-                g_nmmProcessThread = new std::thread(ProcessMonitoringLoop);
+                std::wcout << L"\n";
+                SetColor(14);
+                std::wcout << L"  +----- Integrated NMM Monitoring (Enhanced) --------------------------+\n";
+                ResetColor();
+                std::wcout << L"\n";
+                
+                // Clear old log file
+                {
+                    std::ofstream clearLog("nmm_events.log", std::ios::trunc);
+                    if (clearLog.is_open())
+                    {
+                        clearLog << "===========================================\n";
+                        clearLog << "  NMM EVENT LOG (Network, File, Process)\n";
+                        clearLog << "  Started: ";
+                        SYSTEMTIME st;
+                        GetLocalTime(&st);
+                        char timeStr[64];
+                        sprintf_s(timeStr, "%04d-%02d-%02d %02d:%02d:%02d", 
+                                  st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+                        clearLog << timeStr;
+                        clearLog << "\n===========================================\n";
+                        clearLog.close();
+                    }
+                }
+                
+                // Open separate terminal for detailed log
                 SetColor(10);
-                std::wcout << L"\n  [OK] All NMM monitors started!\n";
+                std::wcout << L"  [*] Opening separate terminal for event details...\n";
                 ResetColor();
-
-                if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; g_nmmNetworkThread = nullptr; }
-                if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; g_nmmFileThread = nullptr; }
-                if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; g_nmmProcessThread = nullptr; }
-
+                
+                STARTUPINFO si = { sizeof(si) };
+                PROCESS_INFORMATION pi;
+                std::wstring cmd = L"powershell.exe -NoExit -Command \"Write-Host 'NMM EVENT MONITOR' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Yellow; Get-Content nmm_events.log -Wait\"";
+                
+                if (CreateProcess(NULL, &cmd[0], NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
+                {
+                    CloseHandle(pi.hProcess);
+                    CloseHandle(pi.hThread);
+                }
+                
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                
+                SetColor(10);
+                std::wcout << L"  [OK] Starting integrated monitoring...\n";
+                std::wcout << L"  [*] Main terminal: Event summaries\n";
+                std::wcout << L"  [*] Second terminal: Full event details\n";
+                SetColor(14);
+                std::wcout << L"\n  Press 'Q' to stop monitoring...\n\n";
+                ResetColor();
+                
+                g_nmmRunning = true;
+                
+                std::thread monitorThread([&]() {
+                    while (g_nmmRunning)
+                    {
+                        // Network monitoring
+                        {
+                            SysEvent event;
+                            if (MonitorTCPConnections(event))
+                            {
+                                SetColor(11);
+                                std::wcout << L"  [NET] ";
+                                ResetColor();
+                                std::wstring wDetail(event.detail.begin(), event.detail.end());
+                                std::wcout << wDetail << L"\n";
+                                
+                                // Log to file
+                                LogNMMEvent("Network", event.detail);
+                            }
+                        }
+                        
+                        // File monitoring
+                        {
+                            SysEvent event;
+                            if (MonitorDirectory(event))
+                            {
+                                SetColor(14);
+                                std::wcout << L"  [FILE] ";
+                                ResetColor();
+                                std::wstring wDetail(event.detail.begin(), event.detail.end());
+                                std::wcout << wDetail << L"\n";
+                                
+                                // Log to file
+                                LogNMMEvent("File", event.detail);
+                            }
+                        }
+                        
+                        // Process monitoring
+                        {
+                            SysEvent event;
+                            if (CheckNewProcess(event))
+                            {
+                                SetColor(10);
+                                std::wcout << L"  [PROC] ";
+                                ResetColor();
+                                std::wstring wDetail(event.detail.begin(), event.detail.end());
+                                std::wcout << wDetail << L"\n";
+                                
+                                // Log to file
+                                LogNMMEvent("Process", event.detail);
+                            }
+                        }
+                        
+                        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                    }
+                });
+                
+                // Wait for user to press 'Q'
+                while (g_nmmRunning)
+                {
+                    if (_kbhit())
+                    {
+                        int key = _getch();
+                        if (key == 'q' || key == 'Q')
+                        {
+                            g_nmmRunning = false;
+                            break;
+                        }
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+                
+                monitorThread.join();
+                
+                SetColor(10);
+                std::wcout << L"\n  [OK] Integrated monitoring stopped.\n";
                 SetColor(8);
-                std::wcout << L"\n  Returning to menu...\n";
+                std::wcout << L"  Note: Check 'nmm_events.log' for full event history.\n";
                 ResetColor();
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                WaitForEnter();
             }
         }
         break;

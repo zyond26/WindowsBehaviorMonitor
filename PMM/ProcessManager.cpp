@@ -249,31 +249,25 @@ void ProcessManager::StartContinuousMonitoring(std::atomic<bool>& running)
     std::wcout << L"========================================\n\n";
     std::wcout << L"[*] Taking initial snapshot...\n";
     
-    // Lấy danh sách process ban đầu
     auto previousProcesses = GetRunningProcesses();
     
     std::wcout << L"[*] Monitoring started. Press 'Q' to stop.\n\n";
     
-    // Vòng lặp giám sát liên tục
     while (running)
     {
-        // Ngủ 1 giây để không ngốn CPU
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         
-        // Lấy danh sách process mới
         auto currentProcesses = GetRunningProcesses();
         
-        // === A. Phát hiện PROCESS MỚI ===
         for (const auto& pair : currentProcesses)
         {
             DWORD pid = pair.first;
-            // Nếu PID này không có trong danh sách cũ -> Process mới!
+            
             if (previousProcesses.find(pid) == previousProcesses.end())
             {
                 std::wcout << L"[+] NEW PROCESS: " << pair.second.processName
                            << L" (PID: " << pid << L")" << std::endl;
                 
-                // Quét ngay lập tức để phát hiện injection
                 std::wstring scanResult = ScanProcessMemory(pid);
                 if (!scanResult.empty())
                 {
@@ -283,11 +277,9 @@ void ProcessManager::StartContinuousMonitoring(std::atomic<bool>& running)
             }
         }
         
-        // === B. Phát hiện PROCESS ĐÃ TẮT ===
         for (const auto& pair : previousProcesses)
         {
             DWORD pid = pair.first;
-            // Nếu PID cũ này không có trong danh sách mới -> Process đã tắt
             if (currentProcesses.find(pid) == currentProcesses.end())
             {
                 std::wcout << L"[-] TERMINATED: " << pair.second.processName
@@ -295,7 +287,6 @@ void ProcessManager::StartContinuousMonitoring(std::atomic<bool>& running)
             }
         }
         
-        // Cập nhật danh sách cũ = mới cho vòng lặp tiếp theo
         previousProcesses = currentProcesses;
     }
     
