@@ -167,8 +167,7 @@ void PrintNMMMenu()
     std::wcout << L"    [2] Start Process Monitoring (New Processes)\n";
     std::wcout << L"    [3] Integrated Monitoring\n";
     ResetColor();
-    std::wcout << L"    [4] Stop All Monitoring\n";
-    std::wcout << L"    [5] Display Current TCP Connections\n";
+    std::wcout << L"    [4] Display Current TCP Connections\n";
     std::wcout << L"\n";
     SetColor(12); // Red
     std::wcout << L"    [0] Back to Main Menu\n";
@@ -498,7 +497,7 @@ void HandlePMMModule()
 
                 while (monitorRunning.load())
                 {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
                     auto currentProcesses = g_processManager.GetRunningProcesses();
 
                     for (const auto& pair : currentProcesses)
@@ -990,23 +989,6 @@ void HandleNMMModule()
                     }
                 }
                 
-                // Open separate terminal for detailed log
-                SetColor(10);
-                std::wcout << L"  [*] Opening separate terminal for event details...\n";
-                ResetColor();
-                
-                STARTUPINFO si = { sizeof(si) };
-                PROCESS_INFORMATION pi;
-                std::wstring cmd = L"powershell.exe -NoExit -Command \"Write-Host 'NMM EVENT MONITOR' -ForegroundColor Cyan; Write-Host '========================================' -ForegroundColor Yellow; Get-Content nmm_events.log -Wait\"";
-                
-                if (CreateProcess(NULL, &cmd[0], NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
-                {
-                    CloseHandle(pi.hProcess);
-                    CloseHandle(pi.hThread);
-                }
-                
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                
                 SetColor(10);
                 std::wcout << L"  [OK] Starting integrated monitoring...\n";
                 std::wcout << L"  [*] Main terminal: Event summaries\n";
@@ -1084,31 +1066,6 @@ void HandleNMMModule()
         break;
 
         case 4:
-        {
-            ClearScreen();
-            PrintBanner();
-            if (!g_nmmRunning)
-            {
-                SetColor(14);
-                std::wcout << L"\n  [!] No monitoring is running!\n";
-                ResetColor();
-            }
-            else
-            {
-                g_nmmRunning = false;
-
-                if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; g_nmmNetworkThread = nullptr; }
-                if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; g_nmmProcessThread = nullptr; }
-
-                SetColor(10);
-                std::wcout << L"\n  [OK] All monitoring stopped!\n";
-                ResetColor();
-            }
-            WaitForEnter();
-        }
-        break;
-
-        case 5:
         {
             ClearScreen();
             PrintBanner();
