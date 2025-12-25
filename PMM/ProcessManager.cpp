@@ -80,13 +80,13 @@ ULONGLONG ProcessManager::GetProcessCreationTime(DWORD pid)
 
 bool ProcessManager::EnableSeDebugPrivilege()
 {
-    HANDLE rawToken = nullptr;
-    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &rawToken))
+    HANDLE accessCard = nullptr;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &accessCard))
     {
         return false;
     }
 
-    UniqueHandle token(rawToken, &::CloseHandle);
+    UniqueHandle token(accessCard, &::CloseHandle);
 
     LUID luid{};
     if (!::LookupPrivilegeValueW(nullptr, SE_DEBUG_NAME, &luid))
@@ -255,7 +255,7 @@ void ProcessManager::StartContinuousMonitoring(std::atomic<bool>& running)
     
     while (running)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         
         auto currentProcesses = GetRunningProcesses();
         
