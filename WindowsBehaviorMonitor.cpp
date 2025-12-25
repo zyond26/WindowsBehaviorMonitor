@@ -84,7 +84,7 @@ void PrintMainMenu()
     std::wcout << L"        >> Monitor Registry & Startup folder changes\n";
     std::wcout << L"\n";
     std::wcout << L"    [3] NMM - Network & System Monitoring Module\n";
-    std::wcout << L"        >> Monitor TCP, Files, and Process events\n";
+    std::wcout << L"        >> Monitor TCP and Process events\n";
     std::wcout << L"\n";
     SetColor(12); // Red
     std::wcout << L"    [0] Exit Program\n";
@@ -164,12 +164,11 @@ void PrintNMMMenu()
 
     std::wcout << L"\n";
     std::wcout << L"    [1] Start Network Monitoring (TCP Connections)\n";
-    std::wcout << L"    [2] Start File System Monitoring (C:\\TestWatch)\n";
-    std::wcout << L"    [3] Start Process Monitoring (New Processes)\n";
-    std::wcout << L"    [4] Integrated Monitoring\n";
+    std::wcout << L"    [2] Start Process Monitoring (New Processes)\n";
+    std::wcout << L"    [3] Integrated Monitoring\n";
     ResetColor();
-    std::wcout << L"    [5] Stop All Monitoring\n";
-    std::wcout << L"    [6] Display Current TCP Connections\n";
+    std::wcout << L"    [4] Stop All Monitoring\n";
+    std::wcout << L"    [5] Display Current TCP Connections\n";
     std::wcout << L"\n";
     SetColor(12); // Red
     std::wcout << L"    [0] Back to Main Menu\n";
@@ -800,7 +799,6 @@ void HandlePFMModule()
 // ========== NMM Module Functions ==========
 
 std::thread* g_nmmNetworkThread = nullptr;
-std::thread* g_nmmFileThread = nullptr;
 std::thread* g_nmmProcessThread = nullptr;
 
 void NetworkMonitoringLoop()
@@ -839,45 +837,6 @@ void NetworkMonitoringLoop()
 
     SetColor(10);
     std::wcout << L"\n  [OK] Network monitoring stopped.\n";
-    ResetColor();
-}
-
-void FileMonitoringLoop()
-{
-    std::wcout << L"\n";
-    SetColor(10);
-    std::wcout << L"  [OK] File system monitoring started...\n";
-    SetColor(14);
-    std::wcout << L"  Press any key to stop monitoring...\n\n";
-    ResetColor();
-
-    while (g_nmmRunning)
-    {
-        if (_kbhit())
-        {
-            _getch();
-            g_nmmRunning = false;
-            break;
-        }
-
-        SysEvent event;
-        if (MonitorDirectory(event))
-        {
-            SetColor(14);
-            std::wcout << L"  [NMM-FILE] ";
-            SetColor(11);
-            std::wcout << L"File Change: ";
-            ResetColor();
-
-            std::wstring wDetail(event.detail.begin(), event.detail.end());
-            std::wcout << wDetail << L"\n";
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-
-    SetColor(10);
-    std::wcout << L"\n  [OK] File monitoring stopped.\n";
     ResetColor();
 }
 
@@ -980,33 +939,6 @@ void HandleNMMModule()
             else
             {
                 g_nmmRunning = true;
-                g_nmmFileThread = new std::thread(FileMonitoringLoop);
-                g_nmmFileThread->join();
-                delete g_nmmFileThread;
-                g_nmmFileThread = nullptr;
-
-                SetColor(8);
-                std::wcout << L"\n  Returning to menu...\n";
-                ResetColor();
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            }
-        }
-        break;
-
-        case 3:
-        {
-            ClearScreen();
-            PrintBanner();
-            if (g_nmmRunning)
-            {
-                SetColor(14);
-                std::wcout << L"\n  [!] Monitoring is already running!\n";
-                ResetColor();
-                WaitForEnter();
-            }
-            else
-            {
-                g_nmmRunning = true;
                 g_nmmProcessThread = new std::thread(ProcessMonitoringLoop);
                 g_nmmProcessThread->join();
                 delete g_nmmProcessThread;
@@ -1020,7 +952,7 @@ void HandleNMMModule()
         }
         break;
 
-        case 4:
+        case 3:
         {
             ClearScreen();
             PrintBanner();
@@ -1045,7 +977,7 @@ void HandleNMMModule()
                     if (clearLog.is_open())
                     {
                         clearLog << "===========================================\n";
-                        clearLog << "  NMM EVENT LOG (Network, File, Process)\n";
+                        clearLog << "  NMM EVENT LOG (Network, Process)\n";
                         clearLog << "  Started: ";
                         SYSTEMTIME st;
                         GetLocalTime(&st);
@@ -1104,22 +1036,6 @@ void HandleNMMModule()
                             }
                         }
                         
-                        // File monitoring
-                        {
-                            SysEvent event;
-                            if (MonitorDirectory(event))
-                            {
-                                SetColor(14);
-                                std::wcout << L"  [FILE] ";
-                                ResetColor();
-                                std::wstring wDetail(event.detail.begin(), event.detail.end());
-                                std::wcout << wDetail << L"\n";
-                                
-                                // Log to file
-                                LogNMMEvent("File", event.detail);
-                            }
-                        }
-                        
                         // Process monitoring
                         {
                             SysEvent event;
@@ -1167,7 +1083,7 @@ void HandleNMMModule()
         }
         break;
 
-        case 5:
+        case 4:
         {
             ClearScreen();
             PrintBanner();
@@ -1182,7 +1098,6 @@ void HandleNMMModule()
                 g_nmmRunning = false;
 
                 if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; g_nmmNetworkThread = nullptr; }
-                if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; g_nmmFileThread = nullptr; }
                 if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; g_nmmProcessThread = nullptr; }
 
                 SetColor(10);
@@ -1193,7 +1108,7 @@ void HandleNMMModule()
         }
         break;
 
-        case 6:
+        case 5:
         {
             ClearScreen();
             PrintBanner();
@@ -1224,7 +1139,6 @@ void HandleNMMModule()
             {
                 g_nmmRunning = false;
                 if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; g_nmmNetworkThread = nullptr; }
-                if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; g_nmmFileThread = nullptr; }
                 if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; g_nmmProcessThread = nullptr; }
             }
             inNMM = false;
@@ -1327,7 +1241,6 @@ int main()
             {
                 g_nmmRunning = false;
                 if (g_nmmNetworkThread) { g_nmmNetworkThread->join(); delete g_nmmNetworkThread; }
-                if (g_nmmFileThread) { g_nmmFileThread->join(); delete g_nmmFileThread; }
                 if (g_nmmProcessThread) { g_nmmProcessThread->join(); delete g_nmmProcessThread; }
             }
 

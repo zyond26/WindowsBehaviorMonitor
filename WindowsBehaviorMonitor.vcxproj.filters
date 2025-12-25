@@ -30,9 +30,6 @@
     <ClCompile Include="Common\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NMM\FileMonitor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NMM\ProcessMonitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Common\Logger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NMM\FileMonitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NMM\ProcessMonitor.h">

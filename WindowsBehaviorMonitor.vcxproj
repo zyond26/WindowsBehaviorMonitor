@@ -128,7 +128,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Common\Logger.cpp" />
-    <ClCompile Include="NMM\FileMonitor.cpp" />
     <ClCompile Include="NMM\NetworkMonitor.cpp" />
     <ClCompile Include="NMM\ProcessMonitor.cpp" />
     <ClCompile Include="PFM\RegistryMonitor.cpp" />
@@ -139,7 +138,6 @@
   <ItemGroup>
     <ClInclude Include="Common\EventStruct.h" />
     <ClInclude Include="Common\Logger.h" />
-    <ClInclude Include="NMM\FileMonitor.h" />
     <ClInclude Include="NMM\NetworkMonitor.h" />
     <ClInclude Include="NMM\ProcessMonitor.h" />
     <ClInclude Include="PFM\RegistryMonitor.h" />
