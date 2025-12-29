@@ -179,9 +179,6 @@ Chương trình sẽ hiển thị menu:
 
 Mỗi module có sub-menu riêng với các chức năng chi tiết.
 
-## 📚 Documentation
-- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Chi tiết về cấu trúc code và cách module hoạt động
-
 ## 📄 License
 +) Dự án phục vụ mục đích học tập và nghiên cứu nội bộ.
 +) Dự án mang tính nghiên cứu – học tập – đào tạo
